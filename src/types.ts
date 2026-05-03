@@ -38,17 +38,39 @@ export interface ScreenshotOptions {
   path?: string;
 }
 
+export interface FetchJsonOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  timeoutMs?: number;
+}
+
 export interface BrowserSessionInfo {
   workspace?: string;
   connected?: boolean;
+  windowId?: number;
+  preferredTabId?: number | null;
+  owned?: boolean;
+  ownership?: 'owned' | 'borrowed';
+  lifecycle?: 'ephemeral' | 'persistent' | 'pinned';
+  surface?: 'dedicated-container' | 'borrowed-user-tab';
+  contextId?: string;
+  tabCount?: number;
+  idleMsRemaining?: number | null;
   [key: string]: unknown;
 }
 
 export interface IPage {
-  goto(url: string, options?: { waitUntil?: 'load' | 'none'; settleMs?: number }): Promise<void>;
+  goto(url: string, options?: { waitUntil?: 'load' | 'none'; settleMs?: number; allowBoundNavigation?: boolean }): Promise<void>;
   evaluate(js: string): Promise<any>;
   /** Safely evaluate JS with pre-serialized arguments — prevents injection. */
   evaluateWithArgs?(js: string, args: Record<string, unknown>): Promise<any>;
+  /**
+   * Fetch JSON from inside the browser context, carrying the page's cookies.
+   * This is intentionally narrow: browser-context JSON fetch, not a generic
+   * HTTP client.
+   */
+  fetchJson(url: string, opts?: FetchJsonOptions): Promise<unknown>;
   getCookies(opts?: { domain?: string; url?: string }): Promise<BrowserCookie[]>;
   snapshot(opts?: SnapshotOptions): Promise<any>;
   click(ref: string, opts?: { nth?: number; firstOnMulti?: boolean }): Promise<{ matches_n: number; match_level: 'exact' | 'stable' | 'reidentified' }>;

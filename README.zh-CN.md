@@ -10,7 +10,7 @@
 
 OpenCLI 可以用同一套 CLI 做三类事情：
 
-- **直接使用现成适配器**：B站、知乎、小红书、Twitter/X、Reddit、HackerNews 等 [90+ 站点](#内置命令) 开箱即用。
+- **直接使用现成适配器**：B站、知乎、小红书、Twitter/X、Reddit、HackerNews 等 [100+ 站点](#内置命令) 开箱即用。
 - **让 AI Agent 操作任意网站**：在你的 AI Agent（Claude Code、Cursor 等）中安装 `opencli-adapter-author` skill，Agent 就能用你的已登录浏览器导航、点击、输入、提取任意网页内容。
 - **把新网站写成 CLI**：用 `opencli browser` 原语 + `opencli-adapter-author` skill，从站点侦察、API 发现、字段解码到 `opencli browser verify` 一条龙。
 
@@ -20,7 +20,7 @@ OpenCLI 可以用同一套 CLI 做三类事情：
 
 - **桌面应用控制** — 通过 CDP 直接在终端驱动 Electron 应用（Cursor、Codex、ChatGPT、Notion 等）。
 - **AI Agent 浏览器自动化** — 安装 `opencli-adapter-author` skill，你的 AI Agent 就能操作任意网站：导航、点击、输入、提取、截图——全部通过你的已登录 Chrome 会话完成。
-- **网站 → CLI** — 把任何网站变成确定性 CLI：90+ 内置适配器，或用 `opencli-adapter-author` skill + `opencli browser verify` 自己写。
+- **网站 → CLI** — 把任何网站变成确定性 CLI：100+ 站点能力已注册，或用 `opencli-adapter-author` skill + `opencli browser verify` 自己写。
 - **账号安全** — 复用 Chrome/Chromium 登录态，凭证永远不会离开浏览器。
 - **面向 AI Agent** — 一个 skill 带你走完站点侦察、API 发现、字段解码、适配器编写、验证的全流程。
 - **CLI 枢纽** — 统一发现、自动安装、纯透传任何外部 CLI（gh、docker、obsidian 等）。
@@ -31,7 +31,10 @@ OpenCLI 可以用同一套 CLI 做三类事情：
 
 ### 1. 安装 OpenCLI
 
+OpenCLI 要求 **Node.js >= 21**。
+
 ```bash
+node --version
 npm install -g @jackwener/opencli
 ```
 
@@ -39,6 +42,10 @@ npm install -g @jackwener/opencli
 
 OpenCLI 通过轻量 Browser Bridge 扩展和本地微型 daemon 与 Chrome/Chromium 通信。daemon 会按需自动启动。
 
+**方式 A — Chrome Web Store（推荐）：**
+在 [Chrome Web Store](https://chromewebstore.google.com/detail/opencli/ildkmabpimmkaediidaifkhjpohdnifk) 安装 **OpenCLI** 扩展。
+
+**方式 B — 手动安装：**
 1. 到 GitHub [Releases 页面](https://github.com/jackwener/opencli/releases) 下载最新的 `opencli-extension-v{version}.zip`。
 2. 解压后打开 `chrome://extensions`，启用 **开发者模式**。
 3. 点击 **加载已解压的扩展程序**，选择解压后的目录。
@@ -63,8 +70,20 @@ opencli bilibili hot --limit 5
 
 - `opencli list` 查看当前所有命令
 - `opencli <site> <command>` 调用内置或生成好的适配器
-- `opencli register mycli` 把本地 CLI 接入同一发现入口
+- `opencli external register mycli` 把本地 CLI 接入同一发现入口
 - `opencli doctor` 处理浏览器连通性问题
+
+## 扩展 OpenCLI
+
+如果你想新增自己的命令，先看 [扩展 OpenCLI](./docs/zh/guide/extending-opencli.md)。README 只保留入口；目录结构、源码管理方式和安装命令放在文档里。
+
+| 需求 | 推荐路径 |
+|------|----------|
+| 把个人网站命令放在自己的 Git repo | `opencli plugin create` + `opencli plugin install file://...` |
+| 快速写一个本机私人 adapter | `opencli browser init <site>/<command>`，放在 `~/.opencli/clis/` |
+| 本地修改官方 adapter | `opencli adapter eject/status/reset` |
+| 发布或安装第三方命令 | `opencli plugin install github:user/repo` |
+| 包装已有本机 binary | `opencli external register <name>` |
 
 ## 给 AI Agent
 
@@ -151,7 +170,8 @@ OpenCLI 不只是网站 CLI，还可以：
 
 ## 前置要求
 
-- **Node.js**: >= 21.0.0
+- **Node.js**: >= 21.0.0（标准 npm 安装路径要求）
+- **Bun**: >= 1.0（可选替代运行时）
 - 浏览器型命令需要 Chrome 或 Chromium 处于运行中，并已登录目标网站
 
 > **重要**：浏览器型命令直接复用你的 Chrome/Chromium 登录态。如果拿到空数据或出现权限类失败，先确认目标站点已经在浏览器里打开并完成登录。
@@ -168,7 +188,6 @@ OpenCLI 不只是网站 CLI，还可以：
 | `OPENCLI_CDP_ENDPOINT` | — | Chrome DevTools Protocol 端点，用于远程浏览器或 Electron 应用 |
 | `OPENCLI_CDP_TARGET` | — | 按 URL 子串过滤 CDP target（如 `detail.1688.com`） |
 | `OPENCLI_VERBOSE` | `false` | 启用详细日志（`-v` 也可以） |
-| `OPENCLI_DIAGNOSTIC` | `false` | 设为 `1` 时在失败时输出结构化诊断上下文 |
 | `DEBUG_SNAPSHOT` | — | 设为 `1` 输出 DOM 快照调试信息 |
 
 `--focus` 同时适用于 `opencli browser *` 和浏览器型 adapter 命令。`--live` 主要是给 adapter 命令用的：`browser` 子命令本来就会一直保留 automation window，直到你手动执行 `opencli browser close` 或等空闲超时。
@@ -235,7 +254,7 @@ npm link
 | **uiverse** | `code` `preview` | 浏览器 |
 | **apple-podcasts** | `search` `episodes` `top` | 公开 |
 | **baidu-scholar** | `search` | 公开 |
-| **google-scholar** | `search` | 公开 |
+| **google-scholar** | `search` `cite` `profile` | 公开 |
 | **gov-law** | `search` `recent` | 公开 |
 | **gov-policy** | `search` `recent` | 公开 |
 | **nowcoder** | `hot` `trending` `topics` `recommend` `creators` `companies` `jobs` `search` `suggest` `experience` `referral` `salary` `papers` `practice` `notifications` `detail` | 公开 / 浏览器 |
@@ -281,6 +300,7 @@ npm link
 | **1688** | `search` `item` `assets` `download` `store` | 浏览器 |
 | **gitee** | `trending` `search` `user` | 公开 / 浏览器 |
 | **gemini** | `new` `ask` `image` `deep-research` `deep-research-result` | 浏览器 |
+| **claude** | `ask` `send` `new` `status` `read` `history` `detail` | 浏览器 |
 | **spotify** | `auth` `status` `play` `pause` `next` `prev` `volume` `search` `queue` `shuffle` `repeat` | OAuth API |
 | **notebooklm** | `status` `list` `open` `current` `get` `history` `summary` `note-list` `notes-get` `source-list` `source-get` `source-fulltext` `source-guide` | 浏览器 |
 | **36kr** | `news` `hot` `search` `article` | 公开 / 浏览器 |
@@ -298,7 +318,7 @@ npm link
 | **douyin** | `videos` `publish` `drafts` `draft` `delete` `stats` `profile` `update` `hashtag` `location` `activities` `collections` | 浏览器 |
 | **yuanbao** | `new` `ask` | 浏览器 |
 
-90+ 适配器 — **[→ 查看完整命令列表](./docs/adapters/index.md)**
+100+ 站点能力 — **[→ 查看完整命令列表](./docs/adapters/index.md)**
 
 `*` `opencli xiaoyuzhou podcast`、`podcast-episodes`、`episode`、`download`、`transcript` 需要本地小宇宙凭证：`~/.opencli/xiaoyuzhou.json`。
 
@@ -493,13 +513,13 @@ opencli plugin uninstall my-tool                            # 卸载
 ## 常见问题排查
 
 - **"Extension not connected" 报错**
-  - 确保你当前的 Chrome 或 Chromium 已安装且**开启了** opencli Browser Bridge 扩展（在 `chrome://extensions` 中检查）。
+  - 确保你已从 [Chrome Web Store](https://chromewebstore.google.com/detail/opencli/ildkmabpimmkaediidaifkhjpohdnifk) 安装 OpenCLI 扩展，且在 `chrome://extensions` 中**已启用**。
 - **"attach failed: Cannot access a chrome-extension:// URL" 报错**
   - 其他 Chrome/Chromium 扩展（如 youmind、New Tab Override 或 AI 助手类扩展）可能产生冲突。请尝试**暂时禁用其他扩展**后重试。
 - **返回空数据，或者报错 "Unauthorized"**
   - Chrome/Chromium 里的登录态可能已经过期。请打开当前页面，在新标签页重新手工登录或刷新该页面。
-- **Node API 错误 (如 parseArgs, fs 等)**
-  - 确保 Node.js 版本 `>= 21`（`node:util` 的 `styleText` 需要 Node 21+）。
+- **Node API 错误 / 缺少 `fetch` / 旧 Node 启动即崩**
+  - OpenCLI 要求 **Node.js >= 21**。先执行 `node --version`，如果版本过低先升级，再重试命令。
 - **Daemon 问题**
   - 检查 daemon 状态：`curl localhost:19825/status`
   - 查看扩展日志：`curl localhost:19825/logs`
